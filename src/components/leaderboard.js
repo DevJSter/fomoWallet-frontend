@@ -66,7 +66,7 @@ const LeaderboardTable = () => {
   React.useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("https://hxxgxmdd-8000.inc1.devtunnels.ms/leaderboard");
+        const response = await fetch("http://localhost:8000/leaderboard");
         const data = await response.json();
         setApiData(data);
       } catch (error) {
@@ -201,8 +201,7 @@ const LeaderboardTable = () => {
         </Table>
         <div className="w-full flex justify-end mt-6 font-bold">
           <span className="text-sm font-mono" suppressHydrationWarning>
-            Total Users: {apiData?.totalUsers || 0} | Last Updated:{" "}
-            {apiData ? formatDate(apiData.timestamp) : "..."}
+            Last Updated: {apiData ? formatDate(apiData.timestamp) : "..."}
           </span>
         </div>
       </CardContent>

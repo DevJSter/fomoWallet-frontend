@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useWriteContract, useWatchContractEvent } from "wagmi";
-import { parseEther } from "viem";
 import {
   Sheet,
   SheetContent,
@@ -12,8 +11,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { betABI, betAddress } from "@/utils/contracts";
-import { decryptMessage, encryptMessage } from "@/utils/encrypt";
+import {
+  betABI,
+  betAddress,
+  usdcContractABI,
+  usdcContractAddress,
+} from "@/utils/contracts";
+import { SignJWT, jwtVerify } from "jose";
+import { parseUnits } from "viem";
 
 const CreateBetSheet = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -21,8 +26,10 @@ const CreateBetSheet = () => {
   const [timeToEnd, setTimeToEnd] = useState("");
   const [hostTwitter, setHostTwitter] = useState("");
   const [encryptedKey, setEncryptedKey] = useState("");
+  const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isMinting, setIsMinting] = useState(false);
 
   const { writeContract, isPending, isError } = useWriteContract();
 
@@ -41,33 +48,81 @@ const CreateBetSheet = () => {
         setTimeToEnd("");
         setHostTwitter("");
         setEncryptedKey("");
+        setEmail("");
         setIsSuccess(false);
       }, 2000);
     },
   });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setIsSuccess(false);
+  async function createToken(data) {
+    const secretKey = new TextEncoder().encode("your-secret-key");
+
+    const token = await new SignJWT({ data })
+      .setProtectedHeader({ alg: "HS256" })
+      .setExpirationTime("70h")
+      .sign(secretKey);
+
+    return token;
+  }
+
+  async function verifyToken(token) {
+    const secretKey = new TextEncoder().encode("your-secret-key");
 
     try {
-      const generatedEncryptedKey = await encryptMessage(encryptedKey);
-      console.log(generatedEncryptedKey);
+      const { payload } = await jwtVerify(token, secretKey);
+      return payload;
+    } catch (error) {
+      console.error("Error verifying token:", error);
+      throw error;
+    }
+  }
 
-      const decryptedKey = await decryptMessage(generatedEncryptedKey);
-      console.log(decryptedKey);
+  const handleMintAndApprove = async () => {
+    setIsMinting(true);
+    try {
+      await writeContract({
+        address: usdcContractAddress,
+        abi: usdcContractABI,
+        functionName: "transferFromOwner",
+        args: [betAddress],
+      });
+    } catch (error) {
+      console.error("Error minting and approving:", error);
+    } finally {
+      setIsMinting(false);
+    }
+  };
 
-      const amountInWei = parseEther(amount);
-      // Convert timeToEnd to seconds if entered in hours
-      const timeToEndSeconds = BigInt(Math.floor(Number(timeToEnd) * 3600));
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    let token;
+    try {
+      token = await createToken(encryptedKey);
+      // console.log("Created token:", token);
+    } catch (error) {
+      console.error("Error:", error);
+    }
 
+    try {
+      // Convert USDC amount to the correct decimals (6 decimals for USDC)
+      const amountInUSDC = parseUnits(amount.toString(), 6)
+      const sevenDaysInSeconds = 7 * 24 * 60 * 60; // 7 days in seconds
+      const currentTimestamp = Math.floor(Date.now() / 1000); // Current timestamp in seconds
+      const timeToEndSeconds = BigInt(currentTimestamp + sevenDaysInSeconds);
+
+      setIsSubmitting(true);
       await writeContract({
         address: betAddress,
         abi: betABI,
         functionName: "hostBet",
-        args: [amountInWei, timeToEndSeconds, hostTwitter, generatedEncryptedKey],
-        value: amountInWei, // Match the amount for payable function
+        args: [
+          amountInUSDC,
+          timeToEndSeconds,
+          hostTwitter,
+          token,
+          email,
+          usdcContractAddress,
+        ],
       });
     } catch (error) {
       console.error("Error creating bet:", error);
@@ -89,16 +144,25 @@ const CreateBetSheet = () => {
             Enter the details for your new bet
           </SheetDescription>
         </SheetHeader>
+        <div className="mt-4 flex justify-end w-full">
+          <Button
+            variant="ghost"
+            onClick={handleMintAndApprove}
+            disabled={isMinting}
+          >
+            {isMinting ? "Processing..." : "Mint & Approve"}
+          </Button>
+        </div>
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="amount">Bet Amount (ETH)</Label>
+            <Label htmlFor="amount">Bet Amount (USDC)</Label>
             <Input
               id="amount"
               type="number"
               step="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              placeholder="0.1"
+              placeholder="100"
               required
               className="w-full"
             />
@@ -124,6 +188,18 @@ const CreateBetSheet = () => {
               value={hostTwitter}
               onChange={(e) => setHostTwitter(e.target.value)}
               placeholder="@username"
+              required
+              className="w-full"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email Address</Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your@email.com"
               required
               className="w-full"
             />

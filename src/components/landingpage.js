@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import About from "./about";
@@ -6,47 +7,114 @@ import PlayGame from "./playgame";
 import { useAccount, useDisconnect } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import CreateBetSheet from "./createbet";
+import { MoreVertical } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import TwitterShareButton from "./intent";
 
 export const Navbar = () => {
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
-  
 
   const formatAddress = (addr) => {
     if (!addr) return "";
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
+  const commonButtonStyles =
+    "border-2 border-black bg-white text-black hover:bg-gray-100";
+
   return (
     <nav className="px-4 py-3 sm:py-6 relative z-50">
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
-        <Link href="/" className="flex items-center gap-2 sm:gap-3">
-          <img src="/logo.png" className="h-8 sm:h-12" alt="Logo" />
-          <p className="font-semibold md:text-xl text-3xl">Fomo Wallet</p>
-        </Link>
-        <div className="flex items-center gap-3 sm:gap-6">
-          <CreateBetSheet />
-          {/* <TwitterShareButton /> */}
-          <ConnectButton.Custom>
-            {({
-              account,
-              chain,
-              openAccountModal,
-              openChainModal,
-              openConnectModal,
-              mounted,
-            }) => {
-              return (
+      <div className=" mx-auto">
+        <div className="flex justify-between items-center">
+          <Link href="/" className="flex items-center gap-2">
+            <img src="/logo.png" className="h-8 w-auto sm:h-12" alt="Logo" />
+            <p className="text-xl sm:text-3xl font-heading tracking-tight">
+              Fomo Wallet
+            </p>
+          </Link>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-6">
+            <Link href="/leaderboard">
+              <p className="font-semibold hover:underline">Leaderboard</p>
+            </Link>
+            <CreateBetSheet />
+            <ConnectButton.Custom>
+              {({
+                account,
+                chain,
+                openAccountModal,
+                openChainModal,
+                openConnectModal,
+                mounted,
+              }) => (
                 <Button
                   onClick={isConnected ? openAccountModal : openConnectModal}
-                  className="border-black bg-purple-600 text-white font-semibold hover:bg-purple-700 transition-colors duration-200 text-sm sm:text-base px-3 sm:px-4"
+                  className="border-black bg-purple-600 text-white font-semibold hover:bg-purple-700 transition-colors duration-200"
                 >
                   {isConnected ? formatAddress(address) : "Connect Wallet"}
                 </Button>
-              );
-            }}
-          </ConnectButton.Custom>
+              )}
+            </ConnectButton.Custom>
+          </div>
+
+          {/* Mobile Dropdown */}
+          <div className="md:hidden">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={commonButtonStyles}
+                >
+                  <MoreVertical className="h-5 w-5" />
+                  <span className="sr-only">Open menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem className="focus:bg-gray-100">
+                  <div className="w-full">
+                    <CreateBetSheet />
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="focus:bg-gray-100" asChild>
+                  <Link href="/leaderboard" className="w-full">
+                    Leaderboard
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="focus:bg-gray-100">
+                  <ConnectButton.Custom>
+                    {({
+                      account,
+                      chain,
+                      openAccountModal,
+                      openChainModal,
+                      openConnectModal,
+                      mounted,
+                    }) => (
+                      <Button
+                        onClick={
+                          isConnected ? openAccountModal : openConnectModal
+                        }
+                        variant="ghost"
+                        className="w-full justify-start p-0 font-normal"
+                      >
+                        {isConnected
+                          ? formatAddress(address)
+                          : "Connect Wallet"}
+                      </Button>
+                    )}
+                  </ConnectButton.Custom>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
     </nav>

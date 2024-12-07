@@ -2,7 +2,7 @@ import "@coinbase/onchainkit/styles.css";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
 import '@rainbow-me/rainbowkit/styles.css';
-import './favicon.ico ';
+import './favicon.ico';
 
 import { getConfig } from "../onchainkit/wagmi";
 import OnchainProviders from "@/onchainkit/provider";

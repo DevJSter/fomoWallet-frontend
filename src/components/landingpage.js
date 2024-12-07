@@ -11,6 +11,7 @@ import TwitterShareButton from "./intent";
 export const Navbar = () => {
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
+  
 
   const formatAddress = (addr) => {
     if (!addr) return "";
@@ -26,7 +27,7 @@ export const Navbar = () => {
         </Link>
         <div className="flex items-center gap-3 sm:gap-6">
           <CreateBetSheet />
-          <TwitterShareButton />
+          {/* <TwitterShareButton /> */}
           <ConnectButton.Custom>
             {({
               account,

@@ -15,7 +15,11 @@ function OnchainProviders({ children }) {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <OnchainKitProvider apiKey={NEXT_PUBLIC_CDP_API_KEY} chain={baseSepolia}>
+        <OnchainKitProvider
+          apiKey={NEXT_PUBLIC_CDP_API_KEY}
+          chain={baseSepolia}
+        >
+          {/* <OnchainKitProvider apiKey={NEXT_PUBLIC_CDP_API_KEY} chain={polygonAmoy}> */}
           <RainbowKitProvider modalSize="compact">
             {children}
           </RainbowKitProvider>

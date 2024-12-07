@@ -6,6 +6,7 @@ import './favicon.ico';
 
 import { getConfig } from "../onchainkit/wagmi";
 import OnchainProviders from "@/onchainkit/provider";
+import { Toaster } from "@/components/ui/sonner";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -33,6 +34,7 @@ export default function RootLayout({ children }) {
       <body className={montserrat.className}>
         <OnchainProviders>
           {children}
+          <Toaster />
         </OnchainProviders>
       </body>
     </html>

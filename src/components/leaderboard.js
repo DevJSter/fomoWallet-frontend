@@ -11,32 +11,47 @@ import {
 import { ArrowUpDown } from "lucide-react";
 
 const LeaderboardTable = () => {
-  // Generate sample data
+  // Generate consistent sample data with lower values
   const generateSampleData = () => {
-    const usernames = ["Player1", "GameMaster", "TweetPro", "SocialGuru"];
-    const sampleData = usernames.map((username) => {
-      const totalTweets = Math.floor(Math.random() * 1000) + 100;
-      const hintRequests = Math.floor(Math.random() * (totalTweets / 2));
-      const score = Math.floor(Math.random() * 10000) + 1000;
-
-      return {
-        username,
-        score,
-        totalTweets,
-        hintRequests,
-        lastUpdated: Date.now() - Math.floor(Math.random() * 86400000),
+    const usernames = ["Player1", "GameMaster", "TweetPro"];
+    // Fixed seed values to ensure consistency across refreshes
+    const sampleData = [
+      {
+        username: "devswayam",
+        score: 4.04,
+        totalTweets: 375,
+        hintRequests: 5,
+        lastUpdated: Date.now() - 36000000,
         stats: {
-          hintRequestPercentage: Math.round((hintRequests / totalTweets) * 100),
-          averageScore: Math.round(score / totalTweets),
+          hintRequestPercentage: 5.44,
+          averageScore: 4.47,
         },
-      };
-    });
+      },
+      {
+        username: "vwakesahu",
+        score: 5.46,
+        totalTweets: 320,
+        hintRequests: 15,
+        lastUpdated: Date.now() - 46000000,
+        stats: {
+          hintRequestPercentage: 5.46,
+          averageScore: 5.46,
+        },
+      },
+      {
+        username: "shanksethd77956",
+        score: 5.45,
+        totalTweets: 280,
+        hintRequests: 12,
+        lastUpdated: Date.now() - 56000000,
+        stats: {
+          hintRequestPercentage: 5.45,
+          averageScore: 5.45,
+        },
+      },
+    ];
 
-    return {
-      timestamp: Date.now(),
-      totalUsers: usernames.length,
-      leaderboard: sampleData,
-    };
+    return sampleData;
   };
 
   const [sortConfig, setSortConfig] = React.useState({
@@ -44,13 +59,22 @@ const LeaderboardTable = () => {
     direction: "desc",
   });
 
-  // Initialize with sample data
-  const [data, setData] = React.useState(() => generateSampleData());
-
-  // Separate state for client-side rendered content
+  const [apiData, setApiData] = React.useState(null);
+  const [dummyData] = React.useState(generateSampleData);
   const [isClient, setIsClient] = React.useState(false);
 
   React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch("http://localhost:8000/leaderboard");
+        const data = await response.json();
+        setApiData(data);
+      } catch (error) {
+        console.error("Error fetching leaderboard data:", error);
+      }
+    };
+
+    fetchData();
     setIsClient(true);
   }, []);
 
@@ -64,14 +88,24 @@ const LeaderboardTable = () => {
     });
   };
 
-  // Format date with fallback for server-side rendering
   const formatDate = (timestamp) => {
-    if (!isClient) return "..."; // Show placeholder during SSR
+    if (!isClient) return "...";
     return new Date(timestamp).toLocaleString();
   };
 
-  const sortedData = React.useMemo(() => {
-    return [...data.leaderboard].sort((a, b) => {
+  const combinedAndSortedData = React.useMemo(() => {
+    let serverData = apiData?.leaderboard || [];
+    let combined = [...serverData, ...dummyData];
+
+    return combined.sort((a, b) => {
+      // First prioritize real data vs dummy data
+      const aIsReal = serverData.some((item) => item.username === a.username);
+      const bIsReal = serverData.some((item) => item.username === b.username);
+
+      if (aIsReal && !bIsReal) return -1;
+      if (!aIsReal && bIsReal) return 1;
+
+      // Then apply the regular sorting
       if (sortConfig.key.includes(".")) {
         const [parent, child] = sortConfig.key.split(".");
         if (sortConfig.direction === "desc") {
@@ -85,7 +119,7 @@ const LeaderboardTable = () => {
       }
       return a[sortConfig.key] - b[sortConfig.key];
     });
-  }, [data.leaderboard, sortConfig]);
+  }, [apiData, dummyData, sortConfig]);
 
   return (
     <Card className="w-full border-none shadow-none">
@@ -134,11 +168,24 @@ const LeaderboardTable = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedData.map((user, index) => (
-              <TableRow key={user.username} className="hover:bg-white">
+            {combinedAndSortedData.map((user, index) => (
+              <TableRow
+                key={user.username}
+                className={`hover:bg-white ${
+                  apiData?.leaderboard?.some(
+                    (item) => item.username === user.username
+                  )
+                    ? "bg-blue-50"
+                    : ""
+                }`}
+              >
                 <TableCell>{index + 1}</TableCell>
-                <TableCell className="font-medium">{user.username}</TableCell>
-                <TableCell>{user.score.toLocaleString()}</TableCell>
+                <TableCell className="font-medium">@{user.username}</TableCell>
+                <TableCell>
+                  {typeof user.score === "number"
+                    ? user.score.toLocaleString()
+                    : user.score}
+                </TableCell>
                 <TableCell>{user.totalTweets.toLocaleString()}</TableCell>
                 <TableCell>{user.hintRequests.toLocaleString()}</TableCell>
                 <TableCell>{user.stats.hintRequestPercentage}%</TableCell>
@@ -154,8 +201,8 @@ const LeaderboardTable = () => {
         </Table>
         <div className="w-full flex justify-end mt-6 font-bold">
           <span className="text-sm font-mono" suppressHydrationWarning>
-            Total Users: {data.totalUsers} | Last Updated:{" "}
-            {formatDate(data.timestamp)}
+            Total Users: {apiData?.totalUsers || 0} | Last Updated:{" "}
+            {apiData ? formatDate(apiData.timestamp) : "..."}
           </span>
         </div>
       </CardContent>

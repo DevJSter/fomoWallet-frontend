@@ -1,54 +1,44 @@
 import React from "react";
 import Marquee from "react-fast-marquee";
-import { GiPokerHand } from "react-icons/gi";
-import { FaCircleDollarToSlot } from "react-icons/fa6";
-import { GiCoinflip } from "react-icons/gi";
-import { FaHandRock, FaDice } from "react-icons/fa";
 
-const CustomMarquee = ({direction}) => {
+const winners = [
+  { username: "@LuckyGambler23", amount: "$1,250" },
+  { username: "@HighRollerPro", amount: "$3,400" },
+  { username: "@BettingKing", amount: "$780" },
+  { username: "@CasinoMaster", amount: "$5,000" },
+  { username: "@QuickWinQueen", amount: "$2,150" },
+  { username: "@JackpotHunter", amount: "$4,800" },
+  { username: "@SpinToWin", amount: "$900" },
+  { username: "@DiceMaster88", amount: "$1,600" },
+  { username: "@SlotChampion", amount: "$2,300" },
+  { username: "@BetPro99", amount: "$3,750" },
+];
+
+const CustomMarquee = ({ direction }) => {
   return (
     <div className="mt-24">
       <Marquee
         className="border-y-4 border-black bg-white py-2 m500:py-4 font-base"
         direction={direction}>
         {Array(3)
-          .fill("xd")
-          .map((x, id) => {
-            return (
-              <div className="flex gap-20" key={id}>
-                <div className="ml-20 flex gap-5 items-center">
-                  <GiPokerHand className="text-6xl m800:text-4xl m500:text-2xl" />
-                  <span className=" text-4xl m800:text-2xl m500:text-xl">
-                    Poker
-                  </span>
-                </div>
-                <div className="flex gap-5 items-center">
-                  <FaCircleDollarToSlot className="text-6xl m800:text-4xl m500:text-2xl" />
-                  <span className=" text-4xl m800:text-2xl m500:text-xl">
-                    Slot Machine
-                  </span>
-                </div>
-                <div className="flex gap-5 items-center">
-                  <GiCoinflip className="text-6xl m800:text-4xl m500:text-2xl" />
-                  <span className=" text-4xl m800:text-2xl m500:text-xl">
-                    Coin Flip
-                  </span>
-                </div>
-                <div className="flex gap-5 items-center">
-                  <FaHandRock className="text-6xl m800:text-4xl m500:text-2xl" />
-                  <span className=" text-4xl m800:text-2xl m500:text-xl">
-                    Rock Papper Scissor
-                  </span>
-                </div>
-                <div className="flex gap-5 items-center">
-                  <FaDice className="text-6xl m800:text-4xl m500:text-2xl" />
-                  <span className=" text-4xl m800:text-2xl m500:text-xl">
-                    Dice
-                  </span>
-                </div>
+          .fill(winners)
+          .flat()
+          .map((winner, id) => (
+            <div className="flex gap-20" key={id}>
+              <div className="ml-20 flex gap-5 items-center">
+                <a
+                  href={`https://x.com/${winner.username.slice(1)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-4xl m800:text-2xl m500:text-xl font-bold text-black hover:underline">
+                  {winner.username}
+                </a>
+                <span className="text-4xl m800:text-2xl m500:text-xl text-green-600">
+                  {winner.amount}
+                </span>
               </div>
-            );
-          })}
+            </div>
+          ))}
       </Marquee>
     </div>
   );

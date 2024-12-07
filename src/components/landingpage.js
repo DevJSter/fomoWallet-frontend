@@ -3,8 +3,24 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import About from "./about";
 import PlayGame from "./playgame";
+import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import {
+  coinbaseWallet,
+  metaMaskWallet,
+  rainbowWallet,
+} from '@rainbow-me/rainbowkit/wallets';
 
 const Navbar = () => {
+  const { address, isConnected } = useAccount();
+  const { disconnect } = useDisconnect();
+
+  // Format address for display
+  const formatAddress = (addr) => {
+    if (!addr) return "";
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  };
+
   return (
     <nav className="px-4 py-6 relative z-50">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
@@ -19,14 +35,18 @@ const Navbar = () => {
           >
             Create Bet
           </Link>
-          <Button
-            onClick={() => {
-              console.log("Connecting wallet...");
+          <ConnectButton.Custom>
+            {({ account, chain, openAccountModal, openChainModal, openConnectModal, mounted }) => {
+              return (
+                <Button
+                  onClick={isConnected ? openAccountModal : openConnectModal}
+                  className="border-black bg-purple-600 text-white font-semibold hover:bg-purple-700 transition-colors duration-200"
+                >
+                  {isConnected ? formatAddress(address) : "Connect Wallet"}
+                </Button>
+              );
             }}
-            className="border-black bg-purple-600 text-white font-semibold hover:bg-purple-700 transition-colors duration-200"
-          >
-            Connect Wallet
-          </Button>
+          </ConnectButton.Custom>
         </div>
       </div>
     </nav>
@@ -60,7 +80,6 @@ const LandingPage = () => {
           }}
         />
       </div>
-
       {/* Content layer */}
       <div className="relative z-10">
         <Navbar />
@@ -73,7 +92,6 @@ const LandingPage = () => {
             />
           </div>
           <About />
-
           <PlayGame />
         </div>
       </div>

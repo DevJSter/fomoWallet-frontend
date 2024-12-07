@@ -7,7 +7,7 @@ import { useAccount, useDisconnect } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import CreateBetSheet from "./createbet";
 
-const Navbar = () => {
+export const Navbar = () => {
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
 

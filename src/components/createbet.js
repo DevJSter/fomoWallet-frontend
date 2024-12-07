@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { betABI, betAddress } from "@/utils/contracts";
+import { decryptMessage, encryptMessage } from "@/utils/encrypt";
 
 const CreateBetSheet = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -51,6 +52,12 @@ const CreateBetSheet = () => {
     setIsSuccess(false);
 
     try {
+      const generatedEncryptedKey = await encryptMessage(encryptedKey);
+      console.log(generatedEncryptedKey);
+
+      const decryptedKey = await decryptMessage(generatedEncryptedKey);
+      console.log(decryptedKey);
+
       const amountInWei = parseEther(amount);
       // Convert timeToEnd to seconds if entered in hours
       const timeToEndSeconds = BigInt(Math.floor(Number(timeToEnd) * 3600));
@@ -59,7 +66,7 @@ const CreateBetSheet = () => {
         address: betAddress,
         abi: betABI,
         functionName: "hostBet",
-        args: [amountInWei, timeToEndSeconds, hostTwitter, encryptedKey],
+        args: [amountInWei, timeToEndSeconds, hostTwitter, generatedEncryptedKey],
         value: amountInWei, // Match the amount for payable function
       });
     } catch (error) {
@@ -71,7 +78,9 @@ const CreateBetSheet = () => {
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button variant="default" className='border-2 border-black'>Create New Bet</Button>
+        <Button variant="default" className="border-2 border-black bg-white">
+          Create New Bet
+        </Button>
       </SheetTrigger>
       <SheetContent>
         <SheetHeader>
@@ -120,12 +129,12 @@ const CreateBetSheet = () => {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="encryptedKey">Encrypted Key</Label>
+            <Label htmlFor="encryptedKey">Enter Private Key</Label>
             <Input
               id="encryptedKey"
               value={encryptedKey}
               onChange={(e) => setEncryptedKey(e.target.value)}
-              placeholder="Enter encrypted key"
+              placeholder="Enter Private Key"
               required
               className="w-full"
             />

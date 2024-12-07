@@ -6,6 +6,7 @@ import PlayGame from "./playgame";
 import { useAccount, useDisconnect } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import CreateBetSheet from "./createbet";
+import TwitterShareButton from "./intent";
 
 export const Navbar = () => {
   const { address, isConnected } = useAccount();
@@ -25,6 +26,7 @@ export const Navbar = () => {
         </Link>
         <div className="flex items-center gap-3 sm:gap-6">
           <CreateBetSheet />
+          <TwitterShareButton />
           <ConnectButton.Custom>
             {({
               account,

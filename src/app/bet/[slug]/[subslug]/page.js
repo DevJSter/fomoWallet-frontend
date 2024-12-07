@@ -1,4 +1,5 @@
 "use client";
+import TwitterShareButton from "@/components/intent";
 import { Navbar } from "@/components/landingpage";
 import PlayGame from "@/components/playgame";
 import { useParams } from "next/navigation";

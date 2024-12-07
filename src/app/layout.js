@@ -1,8 +1,12 @@
+import "@coinbase/onchainkit/styles.css";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
-import './favicon.ico';
+import '@rainbow-me/rainbowkit/styles.css';
 
-const montserrat = Montserrat({ 
+import { getConfig } from "../onchainkit/wagmi";
+import OnchainProviders from "@/onchainkit/provider";
+
+const montserrat = Montserrat({
   subsets: ["latin"],
   // Montserrat comes in multiple weights - you can specify which ones you want to load
   weight: ["300", "400", "500", "600", "700"],
@@ -12,16 +16,21 @@ const montserrat = Montserrat({
 
 export const metadata = {
   title: "Fomo Wallet",
-  description: "Bet on the future of cryptocurrency",
-  icons : {
-    icon : "/favicon.ico",
-  }
+  description: "Let the bet begin!",
 };
 
 export default function RootLayout({ children }) {
+  // const initialState = cookieToInitialState(
+  //   getConfig(),
+  //   headers().get("cookie")
+  // );
   return (
     <html lang="en">
-      <body className={montserrat.className}>{children}</body>
+      <body className={montserrat.className}>
+        <OnchainProviders>
+          {children}
+        </OnchainProviders>
+      </body>
     </html>
   );
 }

@@ -2,6 +2,7 @@ import "@coinbase/onchainkit/styles.css";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
 import '@rainbow-me/rainbowkit/styles.css';
+import './favicon.ico ';
 
 import { getConfig } from "../onchainkit/wagmi";
 import OnchainProviders from "@/onchainkit/provider";
@@ -17,6 +18,9 @@ const montserrat = Montserrat({
 export const metadata = {
   title: "Fomo Wallet",
   description: "Let the bet begin!",
+  icons : {
+    icon : "./favicon.ico",
+  }
 };
 
 export default function RootLayout({ children }) {

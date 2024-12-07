@@ -9,7 +9,7 @@ const CustomMarquee = ({direction}) => {
   return (
     <div className="mt-24">
       <Marquee
-        className="border-y-4 border-black bg-white py-5 m500:py-4 font-base"
+        className="border-y-4 border-black bg-white py-2 m500:py-4 font-base"
         direction={direction}>
         {Array(3)
           .fill("xd")

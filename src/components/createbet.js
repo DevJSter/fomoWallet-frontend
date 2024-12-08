@@ -23,15 +23,16 @@ import { parseUnits } from "viem";
 const CreateBetSheet = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [amount, setAmount] = useState("");
-  const [timeToEnd, setTimeToEnd] = useState("");
+  const [days, setDays] = useState("");
+  const [hours, setHours] = useState("");
+  const [minutes, setMinutes] = useState("");
   const [hostTwitter, setHostTwitter] = useState("");
   const [encryptedKey, setEncryptedKey] = useState("");
   const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [isMinting, setIsMinting] = useState(false);
 
-  const { writeContract, isPending, isError } = useWriteContract();
+  const { writeContractAsync } = useWriteContract();
 
   useWatchContractEvent({
     address: betAddress,
@@ -40,12 +41,14 @@ const CreateBetSheet = () => {
     onLogs(logs) {
       console.log(logs);
       setIsSuccess(true);
-      setIsSubmitting(false);
+      setIsLoading(false);
       setTimeout(() => {
         setIsOpen(false);
         // Reset form
         setAmount("");
-        setTimeToEnd("");
+        setDays("");
+        setHours("");
+        setMinutes("");
         setHostTwitter("");
         setEncryptedKey("");
         setEmail("");
@@ -56,31 +59,17 @@ const CreateBetSheet = () => {
 
   async function createToken(data) {
     const secretKey = new TextEncoder().encode("your-secret-key");
-
     const token = await new SignJWT({ data })
       .setProtectedHeader({ alg: "HS256" })
       .setExpirationTime("70h")
       .sign(secretKey);
-
     return token;
   }
 
-  async function verifyToken(token) {
-    const secretKey = new TextEncoder().encode("your-secret-key");
-
-    try {
-      const { payload } = await jwtVerify(token, secretKey);
-      return payload;
-    } catch (error) {
-      console.error("Error verifying token:", error);
-      throw error;
-    }
-  }
-
   const handleMintAndApprove = async () => {
-    setIsMinting(true);
+    setIsLoading(true);
     try {
-      await writeContract({
+      await writeContractAsync({
         address: usdcContractAddress,
         abi: usdcContractABI,
         functionName: "transferFromOwner",
@@ -89,29 +78,30 @@ const CreateBetSheet = () => {
     } catch (error) {
       console.error("Error minting and approving:", error);
     } finally {
-      setIsMinting(false);
+      setIsLoading(false);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    let token;
-    try {
-      token = await createToken(encryptedKey);
-      // console.log("Created token:", token);
-    } catch (error) {
-      console.error("Error:", error);
-    }
+    setIsLoading(true);
 
     try {
+      const token = await createToken(encryptedKey);
+      
       // Convert USDC amount to the correct decimals (6 decimals for USDC)
-      const amountInUSDC = parseUnits(amount.toString(), 6)
-      const sevenDaysInSeconds = 7 * 24 * 60 * 60; // 7 days in seconds
-      const currentTimestamp = Math.floor(Date.now() / 1000); // Current timestamp in seconds
-      const timeToEndSeconds = BigInt(currentTimestamp + sevenDaysInSeconds);
+      const amountInUSDC = parseUnits(amount.toString(), 6);
+      
+      // Calculate total seconds from days, hours and minutes
+      const totalSeconds = (
+        (parseInt(days) * 24 * 3600) + 
+        (parseInt(hours) * 3600) + 
+        (parseInt(minutes) * 60)
+      );
+      const currentTimestamp = Math.floor(Date.now() / 1000);
+      const timeToEndSeconds = BigInt(currentTimestamp + totalSeconds);
 
-      setIsSubmitting(true);
-      await writeContract({
+      await writeContractAsync({
         address: betAddress,
         abi: betABI,
         functionName: "hostBet",
@@ -126,7 +116,7 @@ const CreateBetSheet = () => {
       });
     } catch (error) {
       console.error("Error creating bet:", error);
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
@@ -148,9 +138,9 @@ const CreateBetSheet = () => {
           <Button
             variant="ghost"
             onClick={handleMintAndApprove}
-            disabled={isMinting}
+            disabled={isLoading}
           >
-            {isMinting ? "Processing..." : "Mint & Approve"}
+            {isLoading ? "Processing..." : "Mint & Approve"}
           </Button>
         </div>
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -168,18 +158,51 @@ const CreateBetSheet = () => {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="timeToEnd">Time Until End (hours)</Label>
-            <Input
-              id="timeToEnd"
-              type="number"
-              step="1"
-              min="1"
-              value={timeToEnd}
-              onChange={(e) => setTimeToEnd(e.target.value)}
-              placeholder="24"
-              required
-              className="w-full"
-            />
+            <Label>Time Until End</Label>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="days" className="text-sm text-gray-500">Days</Label>
+                <Input
+                  id="days"
+                  type="number"
+                  min="0"
+                  max="30"
+                  value={days}
+                  onChange={(e) => setDays(e.target.value)}
+                  placeholder="0"
+                  required
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <Label htmlFor="hours" className="text-sm text-gray-500">Hours</Label>
+                <Input
+                  id="hours"
+                  type="number"
+                  min="0"
+                  max="23"
+                  value={hours}
+                  onChange={(e) => setHours(e.target.value)}
+                  placeholder="0"
+                  required
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <Label htmlFor="minutes" className="text-sm text-gray-500">Minutes</Label>
+                <Input
+                  id="minutes"
+                  type="number"
+                  min="0"
+                  max="59"
+                  value={minutes}
+                  onChange={(e) => setMinutes(e.target.value)}
+                  placeholder="0"
+                  required
+                  className="w-full"
+                />
+              </div>
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="hostTwitter">Twitter Handle</Label>
@@ -218,15 +241,10 @@ const CreateBetSheet = () => {
           <Button
             type="submit"
             className="w-full border-2 border-black"
-            disabled={isPending || isSubmitting}
+            disabled={isLoading}
           >
-            {isPending ? "Creating..." : "Create Bet"}
+            {isLoading ? "Creating..." : "Create Bet"}
           </Button>
-          {isError && (
-            <div className="text-red-600 text-sm mt-2">
-              Error creating bet. Please try again.
-            </div>
-          )}
           {isSuccess && (
             <div className="text-green-600 text-sm mt-2">
               Bet created successfully!

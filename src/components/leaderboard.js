@@ -66,6 +66,8 @@ const LeaderboardTable = () => {
   React.useEffect(() => {
     const fetchData = async () => {
       try {
+
+        const respon = await axios.get("http://localhost:8000/analyze/fomooowall");
         const response = await fetch("http://localhost:8000/leaderboard");
         const data = await response.json();
         setApiData(data);

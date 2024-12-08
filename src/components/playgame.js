@@ -1,24 +1,79 @@
-import React, { useState, useEffect } from "react";
-import About from "./about";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
+import React, { useState } from "react";
 import { useAccount, useChainId } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { parseUnits } from "viem";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import About from "./about";
+import {
+  betABI,
+  betAddress,
+  usdcContractABI,
+  usdcContractAddress,
+} from "@/utils/contracts";
 
 const PlayGame = ({ chainid, betid, contractAddress }) => {
+  // State management
   const [betAmount, setBetAmount] = useState("");
+  const [email, setEmail] = useState("");
+  const [twitter, setTwitter] = useState("");
+  const [txHash, setTxHash] = useState("");
+
+  // Wagmi hooks
   const { address, isConnected } = useAccount();
   const currentChainId = useChainId();
 
-  console.log(currentChainId);
+  // Contract write hooks
+  const { writeContractAsync, error, isPending } = useWriteContract();
 
+  // Transaction confirmation hook
+  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({
+      hash: txHash,
+    });
+
+  // Constants
+  const quickBets = [10, 20, 50, 100, 200, 500];
+
+  // Handlers
   const handleQuickBet = (amount) => {
     setBetAmount(amount);
   };
 
-  const quickBets = [10, 20, 50, 100, 200, 500];
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  // Show wrong network message if connected but on wrong chain
+    if (!betAmount || !email || !twitter) {
+      alert("Please fill in all fields");
+      return;
+    }
+
+    try {
+      const amountInUSDC = parseUnits(betAmount.toString(), 6);
+
+      const hash = await writeContractAsync({
+        address: contractAddress,
+        abi: betABI,
+        functionName: "placeBet",
+        args: [betid, amountInUSDC, twitter, email],
+      });
+
+      setTxHash(hash);
+
+      // Reset form after successful submission
+      if (isConfirmed) {
+        setBetAmount("");
+        setEmail("");
+        setTwitter("");
+        setTxHash("");
+      }
+    } catch (error) {
+      console.error("Error placing bet:", error);
+    }
+  };
+
+  // Network check render
   if (
     isConnected &&
     chainid !== undefined &&
@@ -36,14 +91,7 @@ const PlayGame = ({ chainid, betid, contractAddress }) => {
                 Please switch to the correct network to continue
               </p>
               <ConnectButton.Custom>
-                {({
-                  account,
-                  chain,
-                  openAccountModal,
-                  openChainModal,
-                  openConnectModal,
-                  mounted,
-                }) => (
+                {({ openChainModal }) => (
                   <Button
                     onClick={openChainModal}
                     className="border-2 border-black bg-pink-500 text-white hover:bg-pink-600"
@@ -60,6 +108,7 @@ const PlayGame = ({ chainid, betid, contractAddress }) => {
     );
   }
 
+  // Wallet connection check render
   if (!isConnected) {
     return (
       <div className="pt-12">
@@ -73,23 +122,14 @@ const PlayGame = ({ chainid, betid, contractAddress }) => {
                 Please connect your wallet to start playing
               </p>
               <ConnectButton.Custom>
-                {({
-                  account,
-                  chain,
-                  openAccountModal,
-                  openChainModal,
-                  openConnectModal,
-                  mounted,
-                }) => {
-                  return (
-                    <Button
-                      onClick={openConnectModal}
-                      className="border-2 border-black bg-pink-500 text-white hover:bg-pink-600"
-                    >
-                      Connect Wallet
-                    </Button>
-                  );
-                }}
+                {({ openConnectModal }) => (
+                  <Button
+                    onClick={openConnectModal}
+                    className="border-2 border-black bg-pink-500 text-white hover:bg-pink-600"
+                  >
+                    Connect Wallet
+                  </Button>
+                )}
               </ConnectButton.Custom>
             </div>
           </div>
@@ -138,7 +178,7 @@ const PlayGame = ({ chainid, betid, contractAddress }) => {
                     Game Rules
                   </h3>
                   <ul className="space-y-1 sm:space-y-2 font-mono text-sm sm:text-base">
-                    <li>• Minimum bet: $10</li>
+                    <li>• Minimum bet: $0</li>
                     <li>• Maximum bet: $1000</li>
                     <li>• Multiple bets allowed</li>
                   </ul>
@@ -152,26 +192,87 @@ const PlayGame = ({ chainid, betid, contractAddress }) => {
                 Place Your Bet
               </h2>
               <div className="bg-white border-2 border-black rounded-lg p-4 sm:p-6">
-                <div className="mb-4 sm:mb-6">
-                  <label className="block mb-2 text-sm sm:text-base">
-                    Enter Bet Amount
-                  </label>
-                  <Input
-                    type="number"
-                    value={betAmount}
-                    onChange={(e) => setBetAmount(e.target.value)}
-                    className="w-full shadow-light border-black"
-                    placeholder="Enter amount"
-                    min="10"
-                    max="1000"
-                  />
-                </div>
-                <Button className="w-full border-black bg-pink-500 text-white text-sm sm:text-base">
-                  Place Bet
-                </Button>
-                <div className="mt-4 text-black text-center text-sm sm:text-base">
-                  Selected Amount: ${betAmount || "0"}
-                </div>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label className="block mb-2 text-sm sm:text-base">
+                      Enter Bet Amount
+                    </label>
+                    <Input
+                      type="number"
+                      value={betAmount}
+                      onChange={(e) => setBetAmount(e.target.value)}
+                      className="w-full shadow-light border-black"
+                      placeholder="Enter amount"
+                      min="0"
+                      max="1000"
+                      disabled={isPending || isConfirming}
+                    />
+                  </div>
+
+                  <div className="w-full flex items-center gap-4">
+                    <div>
+                      <label className="block mb-2 text-sm sm:text-base">
+                        Email
+                      </label>
+                      <Input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full shadow-light border-black"
+                        placeholder="Enter your email"
+                        disabled={isPending || isConfirming}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block mb-2 text-sm sm:text-base">
+                        Twitter
+                      </label>
+                      <Input
+                        type="text"
+                        value={twitter}
+                        onChange={(e) => setTwitter(e.target.value)}
+                        className="w-full shadow-light border-black"
+                        placeholder="@username"
+                        disabled={isPending || isConfirming}
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={isPending || isConfirming}
+                    className="w-full border-black bg-pink-500 text-white text-sm sm:text-base"
+                  >
+                    {isPending
+                      ? "Confirming..."
+                      : isConfirming
+                        ? "Waiting for confirmation..."
+                        : "Place Bet"}
+                  </Button>
+
+                  {txHash && (
+                    <div className="text-sm text-gray-600 break-all">
+                      Transaction Hash: {txHash}
+                    </div>
+                  )}
+
+                  {isConfirmed && (
+                    <div className="text-green-500 text-center text-sm">
+                      Transaction confirmed. Bet placed successfully!
+                    </div>
+                  )}
+
+                  {error && (
+                    <div className="text-red-500 text-center text-sm">
+                      Error: {error.shortMessage || error.message}
+                    </div>
+                  )}
+
+                  <div className="text-black text-center text-sm sm:text-base font-bold font-mono">
+                    Selected Amount: ${betAmount || "0"}
+                  </div>
+                </form>
               </div>
             </div>
           </div>

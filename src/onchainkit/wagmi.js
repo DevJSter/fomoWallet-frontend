@@ -37,7 +37,9 @@ export function useWagmiConfig() {
     );
 
     const wagmiConfig = createConfig({
-      chains: [baseSepolia, polygonAmoy],
+      chains: [
+        baseSepolia,
+         polygonAmoy],
       // turn off injected provider discovery
       multiInjectedProviderDiscovery: false,
       connectors,

@@ -1,4 +1,4 @@
-export const betAddress = "0xCa3D220E5870BA2857eBf12484F48f1024587D8A";
+export const betAddress = "0x935903d0e43bd6A9118568a9f42bad32544538d6";
 
 export const usdcContractAddress = "0x577caE638D7F8F8978F963C566dACb0aA861F961";
 
@@ -456,34 +456,34 @@ export const betABI = [
     name: "OwnershipTransferred",
     type: "event",
   },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "betId",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "amount",
-        type: "uint256",
-      },
-      {
-        internalType: "string",
-        name: "bettorTwitter",
-        type: "string",
-      },
-      {
-        internalType: "string",
-        name: "bettorEmail",
-        type: "string",
-      },
-    ],
-    name: "placeBet",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
+    {
+      inputs: [
+        {
+          internalType: "uint256",
+          name: "betId",
+          type: "uint256",
+        },
+        {
+          internalType: "uint256",
+          name: "amount",
+          type: "uint256",
+        },
+        {
+          internalType: "string",
+          name: "bettorTwitter",
+          type: "string",
+        },
+        {
+          internalType: "string",
+          name: "bettorEmail",
+          type: "string",
+        },
+      ],
+      name: "placeBet",
+      outputs: [],
+      stateMutability: "nonpayable",
+      type: "function",
+    },
   {
     inputs: [],
     name: "renounceOwnership",
